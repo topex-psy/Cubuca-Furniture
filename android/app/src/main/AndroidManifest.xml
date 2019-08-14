@@ -8,9 +8,13 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="Cubuca"
+        android:label="Cubuca Furniture"
         android:icon="@drawable/icon"
         android:screenOrientation="portrait">
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDejcS0J6-kZysm6F_7Dbp8HQIGS06aWKE"/>
+
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
