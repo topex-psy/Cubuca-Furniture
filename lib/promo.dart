@@ -5,6 +5,7 @@ import 'package:transparent_image/transparent_image.dart';
 import 'widgets/buttons.dart';
 import 'widgets/progress.dart';
 import 'models/promo.dart';
+import 'utils/utils.dart';
 
 class Promo extends StatefulWidget {
   @override
@@ -22,14 +23,26 @@ class _PromoState extends State<Promo> {
   Future<dynamic> _getListPromo() {
     return getListPromo().then((responseJson) {
       print("DATA PROMO RESPONSE:" + responseJson.toString());
-      var result = responseJson["result"];
-      List<PromoApi> listPromo = [];
-      for (Map res in result) { listPromo.add(PromoApi.fromJson(res)); }
-      setState(() {
-        _listPromo = listPromo;
-        _listPromoFiltered = listPromo;
-      });
-      print("DATA PROMO BERHASIL DIMUAT!");
+      if (responseJson == null) {
+        print("DATA PROMO EXCEPTION NULL!");
+        setState(() {
+          _listPromo = [];
+          _listPromoFiltered = [];
+        });
+        h.showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text("Kembali"),
+        ));
+      } else {
+        var result = responseJson["result"];
+        List<PromoApi> listPromo = [];
+        for (Map res in result) { listPromo.add(PromoApi.fromJson(res)); }
+        setState(() {
+          _listPromo = listPromo;
+          _listPromoFiltered = listPromo;
+        });
+        print("DATA PROMO BERHASIL DIMUAT!");
+      }
     }).catchError((e) {
       print("DATA PROMO ERROOOOOOOOOOOOR: $e");
     }).whenComplete(() {
@@ -80,6 +93,10 @@ class _PromoState extends State<Promo> {
 
   @override
   Widget build(BuildContext context) {
+    h = MyHelper(context);
+    a = MyAppHelper(context);
+
+    final key = GlobalKey<ScaffoldState>();
     Widget searchBar = TextField(
       controller: _searchController,
       decoration: InputDecoration(hintText: "Cari promo", prefixIcon: Icon(Icons.search)),
@@ -87,8 +104,6 @@ class _PromoState extends State<Promo> {
       textInputAction: TextInputAction.search,
       onChanged: _onSearchTextChanged,
     );
-
-    final key = new GlobalKey<ScaffoldState>();
 
     return Scaffold(
       key: key,
@@ -118,8 +133,8 @@ class _PromoState extends State<Promo> {
                   if (_listPromo.isEmpty) return;
                   setState(() {
                     _searchBarVisible = !_searchBarVisible;
+                    _listPromo = [];
                   });
-                  setState(() => _listPromo = []);
                   _searchController.text = "";
                   _getListPromo();
                 },
@@ -145,11 +160,13 @@ class _PromoState extends State<Promo> {
         child: _listPromo.isEmpty ? Center(child: LoadingCircle(),) : (_listPromoFiltered.isEmpty ? Center(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Padding(padding: EdgeInsets.only(top: 24, bottom: 12), child: Icon(Icons.face, color: Colors.grey[600], size: 100,),),
-              Text("Tidak ada promo untuk saat ini", style: new TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey[600])),
+              Text("Tidak ada promo untuk saat ini", style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey[600])),
+              SizedBox(height: 50,),
             ],
-          )
+          ),
         ) : ListView.builder(
           padding: EdgeInsets.only(bottom: 40),
           itemCount: _listPromoFiltered.length,

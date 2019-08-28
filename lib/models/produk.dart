@@ -37,12 +37,13 @@ class JenisProduk {
 }
 
 class Produk {
-  Produk({this.id, this.sku, this.idKategori, this.idJenis, this.gambar, this.judul, this.kategori, this.jenis, this.deskripsi, this.ukuran, this.harga, this.linkBukaLapak, this.linkTokopedia, this.linkShopee, this.isTersedia, this.link, this.waktuPasang, this.jumlahGambar, this.listGambar, this.ketPreOrder});
+  Produk({this.id, this.sku, this.idKategori, this.idJenis, this.gambar, this.thumbnail, this.judul, this.kategori, this.jenis, this.deskripsi, this.ukuran, this.harga, this.linkBukaLapak, this.linkTokopedia, this.linkShopee, this.isTersedia, this.link, this.waktuPasang, this.jumlahGambar, this.listGambar, this.ketPreOrder});
   final int id;
   final String sku;
   final int idKategori;
   final int idJenis;
   final String gambar;
+  final String thumbnail;
   final String judul;
   final String kategori;
   final String jenis;
@@ -66,6 +67,7 @@ class Produk {
       idKategori: int.parse(res['ID_KATEGORI']),
       idJenis: int.parse(res['ID_JENIS']),
       gambar: res['GAMBAR'],
+      thumbnail: res['THUMBNAIL'],
       judul: res['NAMA'],
       kategori: res['KATEGORI'],
       jenis: res['JENIS'],
@@ -85,12 +87,30 @@ class Produk {
   }
 }
 
+Future<dynamic> getListWishlist(String ids) async {
+  try {
+    final http.Response response = await http.get(
+      Uri.encodeFull(APP_HOST + "api/get/product?ids=$ids"),
+      headers: {"Accept": "application/json"}
+    );
+    return json.decode(response.body);
+  } catch (e) {
+    print(e);
+    return null;
+  }
+}
+
 Future<dynamic> getListKategoriProduk() async {
-  final http.Response response = await http.get(
-    Uri.encodeFull(APP_HOST + "api/get/catalogue"),
-    headers: {"Accept": "application/json"}
-  );
-  return json.decode(response.body);
+  try {
+    final http.Response response = await http.get(
+      Uri.encodeFull(APP_HOST + "api/get/catalogue"),
+      headers: {"Accept": "application/json"}
+    );
+    return json.decode(response.body);
+  } catch (e) {
+    print(e);
+    return null;
+  }
 }
 
 Future<dynamic> getListJenisProduk({int kategori = 0, String keyword = ""}) async {

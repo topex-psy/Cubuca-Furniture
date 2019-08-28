@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audio_cache.dart';
 import 'package:share/share.dart';
 import '../widgets/buttons.dart';
@@ -15,44 +15,10 @@ class MyAppHelper {
   final BuildContext context;
   MyAppHelper(this.context);
 
-  /* menuAction(String menu) {
-    //TODO aksi menu pojok
-    switch (menu) {
-      case MenuPojok.rate: print("rateeee"); break;
-      case MenuPojok.about: print("abouuut"); break;
-      case MenuPojok.help: print("heeelp"); break;
-      case MenuPojok.career: print("careeer"); break;
-    }
-  } */
-
-  Widget vendorCard(String logo, String link) {
-    double cardSize = 0.5 * h.screenSize().width / 2;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => h.openURL(link),
-        child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Image.asset(logo, width: cardSize, height: cardSize, fit: BoxFit.contain,),
-        ),
-      ),
-    );
-  }
-
   beliProduk(Produk item) {
     if (item.isTersedia) {
       print("beli produk: ${item.judul}");
       Widget isi = Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-        /* AnimatedBuilder(
-          animation: _nudgeController,
-          builder: (BuildContext context, Widget child) {
-            return Transform(
-              transform: Matrix4.translationValues(_nudge.value * 20.0, 0, 0),
-              child: Icon(Icons.shopping_cart, size: 50, color: Colors.grey[400],),
-            );
-          },
-        ), */
-        //Icon(Icons.shopping_cart, size: 50, color: Colors.grey[400],),
         SizedBox(height: 8,),
         RichText(text: TextSpan(
             style: TextStyle(
@@ -73,9 +39,9 @@ class MyAppHelper {
           spacing: 4.0,
           runSpacing: 4.0,
           children: <Widget>[
-            vendorCard("images/vendor/tokopedia.png", item.linkTokopedia),
-            vendorCard("images/vendor/bukalapak.png", item.linkBukaLapak),
-            vendorCard("images/vendor/shopee.png", item.linkShopee),
+            VendorCard(logo: "images/vendor/tokopedia.png", aksi: () => h.openURL(item.linkTokopedia)),
+            VendorCard(logo: "images/vendor/bukalapak.png", aksi: () => h.openURL(item.linkBukaLapak)),
+            VendorCard(logo: "images/vendor/shopee.png", aksi: () => h.openURL(item.linkShopee)),
           ],
         ),
         Divider(color: Colors.black38, height: 32.0,),
@@ -132,9 +98,11 @@ class MyHelper {
           child: Opacity(
             opacity: a1.value,
             child: AlertDialog(
-              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+              //shape: ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(30.0))),
               title: showJudul ? Text(judul, style: TextStyle(fontWeight: FontWeight.bold),) : null,
               content: SingleChildScrollView(child: isi,),
+              contentPadding: EdgeInsets.all(24),
               actions: showButton ? <Widget>[
                 customButton == null ? FlatButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -151,22 +119,6 @@ class MyHelper {
       context: context,
       pageBuilder: (context, animation1, animation2) {}
     );
-
-
-    /* showDialog(
-      context: context,
-      //barrierDismissible: false, // user must tap button!
-      builder: (context) => AlertDialog(
-          title: Text(judul, style: TextStyle(fontWeight: FontWeight.bold),),
-          content: SingleChildScrollView(child: isi,),
-          actions: showButton?<Widget>[
-            FlatButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("OK"),
-            ),
-          ]:null,
-        ),
-    ); */
   }
 
   showConfirm({String judul, String pesan, void Function() aksi, void Function() doOnCancel = null}) {
@@ -181,7 +133,10 @@ class MyHelper {
             if (doOnCancel != null) doOnCancel();
             Navigator.of(context).pop(false);
           },),
-          FlatButton(child: Text("Ya", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),), onPressed: aksi,),
+          FlatButton(child: Text("Ya", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),), onPressed: () {
+            aksi();
+            Navigator.of(context).pop();
+          },),
         ],
       ),
     );
@@ -191,7 +146,7 @@ class MyHelper {
     showAlert("Hubungi Kami",
       ListBody(
         children: <Widget>[
-          UiButton(color: Colors.greenAccent[700], icon: MdiIcons.whatsapp, teks: "WhatsApp", aksi: () => launch("https://wa.me/${Kontak.noWA}?text=${Uri.encodeFull(pesan)}")),
+          UiButton(color: Colors.greenAccent[700], icon: MdiIcons.whatsapp, teks: "WhatsApp", ukuranTeks: 16, aksi: () => launch("https://wa.me/${Kontak.noWA}?text=${Uri.encodeFull(pesan)}")),
           Divider(color: Colors.black38,),
           ListMenu(Icons.phone, "Telepon", () => launch("tel:${Kontak.noHP}")),
           ListMenu(Icons.message, "SMS", () => launch("sms:${Kontak.noHP}")),
@@ -214,6 +169,19 @@ class MyHelper {
         ],
       ),
       showButton: false,
+    );
+  }
+
+  String maxlength(String teks, int maxlength) {
+    return teks.length > maxlength ? teks.substring(0, maxlength) + "..." : teks;
+  }
+
+  Html html(String htmlString) {
+    return Html(
+      data: htmlString,
+      onLinkTap: (url) {
+        print("OPENING URL $url...");
+      },
     );
   }
 }

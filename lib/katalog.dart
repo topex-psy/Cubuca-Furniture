@@ -66,7 +66,7 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
     setState(() { _myWishlist = myWishlist; });
     key.currentState.hideCurrentSnackBar();
     key.currentState.showSnackBar(
-      SnackBar(content: Text("${item.judul} telah " + (aksi==1?"ditambahkan ke":"dihapus dari") + " favorit!"), behavior: SnackBarBehavior.floating, action: SnackBarAction(
+      SnackBar(content: Text("${item.judul} telah " + (aksi == 1 ? "ditambahkan ke" : "dihapus dari") + " favorit!"), behavior: SnackBarBehavior.floating, action: SnackBarAction(
         onPressed: () => _setMyWishlist(item, aksi==1?0:1, aksiKe: aksiKe+1),
         label: aksiKe % 2 == 0 ? "Undo" : "Redo",
       ),),
@@ -74,9 +74,9 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
   }
 
   Widget _createListProdukItem(Produk item) {
-    print("_createListProdukItem CREATE PRODUCT ITEM ID = ${item.id}");
+    print("_createListProdukItem THUMBNAIL = ${Uri.encodeFull(item.thumbnail)}");
     bool isWishlist = _myWishlist.contains(item.id.toString());
-    String urlPic = item.gambar;
+    String urlThumb = item.thumbnail;
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -92,17 +92,16 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           GestureDetector(
-            onTap: () {
-              print("GAMBAR PRODUK YANG DIBUKA = $urlPic");
-              Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProduk(item: item, color: widget.color,)));
-              //h.openURL(urlPic);
-            },
-            child: Hero(
-              tag: "Produk${item.id}",
-              transitionOnUserGestures: true,
-              child: ClipRRect(borderRadius: BorderRadius.circular(5), child:
-                CachedNetworkImage(
-                    imageUrl: urlPic,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProduk(item: item, color: widget.color,))),
+            child: Card(
+              clipBehavior: Clip.antiAlias,
+              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(35)),
+              child: Hero(
+                tag: "Produk${item.id}",
+                transitionOnUserGestures: true,
+                child: ClipRRect(borderRadius: BorderRadius.circular(15), child:
+                  CachedNetworkImage(
+                    imageUrl: Uri.encodeFull(urlThumb),
                     placeholder: (context, url) => Container(width: 100, height: 100, padding: EdgeInsets.all(50), child: CircularProgressIndicator()),
                     errorWidget: (context, url, error) => Container(width: 100, height: 100, child: Center(
                       child: Icon(Icons.error, color: Colors.grey,),
@@ -110,6 +109,7 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -119,6 +119,7 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                SizedBox(height: 5,),
                 Text(item.judul, style: TextStyle(fontSize: 14, height: 1.0, fontWeight: FontWeight.bold)),
                 SizedBox(height: 5,),
                 Text("Kode: ${item.sku}", style: TextStyle(fontSize: 12, height: 1.0, fontStyle: FontStyle.italic, color: Colors.grey[600])),

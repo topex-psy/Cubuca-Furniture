@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'utils/constants.dart';
 
 class Lokasi extends StatefulWidget {
@@ -11,17 +13,19 @@ class Lokasi extends StatefulWidget {
 
 class _LokasiState extends State<Lokasi> {
   Completer<GoogleMapController> _controller = Completer();
-  LatLng latLng = LatLng(Kontak.lat, Kontak.lng);
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
-  double _zoom = 19.0;
+  LatLng _latLng = LatLng(Kontak.lat, Kontak.lng);
+  double _zoom = 18.0;
 
   @override
   void initState() {
     super.initState();
     final MarkerId markerId = MarkerId("primaryAddress");
     final Marker marker = Marker(
+      alpha: 0.75,
+      icon: BitmapDescriptor.defaultMarkerWithHue(180.0),
       markerId: markerId,
-      position: latLng,
+      position: _latLng,
       infoWindow: InfoWindow(title: Kontak.nama, snippet:  Kontak.alamat),
       onTap: () {},
     );
@@ -33,15 +37,24 @@ class _LokasiState extends State<Lokasi> {
 
   Future<void> _animateZoom() async {
     final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newLatLngZoom(latLng, _zoom));
+    controller.animateCamera(CameraUpdate.newLatLngZoom(_latLng, _zoom));
   }
-  _zoomIn() {
+  /* _zoomIn() {
     if (_zoom < 20.0) setState(() => _zoom += 1.0);
     _animateZoom();
   }
   _zoomOut() {
     if (_zoom > 10.0) setState(() => _zoom -= 1.0);
     _animateZoom();
+  } */
+
+  _launchMap() async {
+    var mapSchema = 'geo:${_latLng.latitude},${_latLng.longitude}';
+    if (await canLaunch(mapSchema)) {
+      await launch(mapSchema);
+    } else {
+      throw 'Could not open the map.';
+    }
   }
 
   @override
@@ -65,9 +78,9 @@ class _LokasiState extends State<Lokasi> {
           ),
           IconButton(
             color: Colors.black87,
-            icon: Icon(Icons.person_pin),
-            tooltip: "Street View",
-            onPressed: () {}, //TODO launch streetview
+            icon: Icon(MdiIcons.map),
+            tooltip: "Buka Aplikasi Map",
+            onPressed: _launchMap,
           ),
         ],),
       ),
@@ -75,7 +88,7 @@ class _LokasiState extends State<Lokasi> {
         mapType: MapType.normal,
         markers: Set<Marker>.of(markers.values),
         initialCameraPosition: CameraPosition(
-          target: latLng,
+          target: _latLng,
           zoom: _zoom,
           bearing: 0,
           tilt: 0,
@@ -83,30 +96,6 @@ class _LokasiState extends State<Lokasi> {
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
         },
-      ),
-      floatingActionButton: Container(
-        margin: EdgeInsets.only(bottom: 50),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            FloatingActionButton(
-              onPressed: _zoomIn,
-              heroTag: "_fabZoomIn",
-              child: Icon(Icons.zoom_in, color: Colors.white,),
-              backgroundColor: Colors.grey[700],
-              mini: true,
-            ),
-            //SizedBox(height: 8,),
-            FloatingActionButton(
-              onPressed: _zoomOut,
-              heroTag: "_fabZoomOut",
-              child: Icon(Icons.zoom_out, color: Colors.white,),
-              backgroundColor: Colors.grey[700],
-              mini: true,
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:transparent_image/transparent_image.dart';
 import 'models/produk.dart';
 import 'widgets/slivers.dart';
 import 'utils/utils.dart';
@@ -32,6 +34,8 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
     h = MyHelper(context);
     a = MyAppHelper(context);
 
+    String judul = h.maxlength(widget.item.judul, 15);
+
     return Scaffold(
       body: SafeArea(
         child: DefaultTabController(
@@ -42,20 +46,41 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
                 SliverAppBar(
                   backgroundColor: widget.color.withLightness(0.85).toColor(),
                   expandedHeight: 200.0,
-                  floating: false,
-                  pinned: true,
+                  floating: true,
+                  pinned: false,
                   flexibleSpace: FlexibleSpaceBar(
-                    //centerTitle: true,
-                    title: Text(widget.item.judul, style: TextStyle(
+                    centerTitle: false,
+                    title: Text(judul, style: TextStyle(
                       color: Colors.black,
-                      height: 1.0,
-                      fontWeight: FontWeight.bold,
                       fontSize: 19.0,
+                      height: 1.0,
                     )),
-                    background: Hero(tag: "Produk${widget.item.id}", child: Image.network(
-                      widget.item.gambar,
-                      fit: BoxFit.cover,
-                    ),),
+                    background: Stack(children: <Widget>[
+                      Positioned.fill(child: Hero(
+                        tag: "Produk${widget.item.id}",
+                        child: GestureDetector(
+                          onTap: () { print("GAMBARNYA = ${Uri.encodeFull(widget.item.gambar)}"); }, //TODO slideshow galeri
+                          child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: Uri.encodeFull(widget.item.gambar), fit: BoxFit.cover,),
+                        ),
+                      ),),
+                      Positioned.fill(child: IgnorePointer(child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          gradient: LinearGradient(
+                            begin: FractionalOffset.bottomCenter,
+                            end: FractionalOffset.topCenter,
+                            colors: [
+                              Colors.white.withOpacity(1.0),
+                              Colors.white.withOpacity(0.0),
+                            ],
+                            stops: [
+                              0.0,
+                              0.65,
+                            ]
+                          ),
+                        ),
+                      ),),)
+                    ],),
                   ),
                 ),
                 SliverPersistentHeader(
@@ -82,8 +107,12 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
                 controller: _tabController,
                 children: <Widget>[
                   Container(
-                    child: Column(children: <Widget>[
-                      SizedBox(height: 12,),
+                    padding: EdgeInsets.all(20),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                      Text("${widget.item.judul}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
+                      SizedBox(height: 8,),
+                      Text("SKU: ${widget.item.sku}", style: TextStyle(fontSize: 14.0, color: Colors.grey[600], fontStyle: FontStyle.italic),),
+                      SizedBox(height: 24,),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -92,7 +121,8 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
                           _buildButtonColumn(Colors.lightBlue, Icons.share, 'BAGIKAN', () => h.bagikan(widget.item.link, pesan: "Menurut saya produk ini sangat menarik!")),
                         ],
                       ),
-                      Padding(padding: EdgeInsets.all(20), child: Text(widget.item.deskripsi),)
+                      SizedBox(height: 24,),
+                      Html(data: widget.item.deskripsi),
                     ],),
                   ),
                   Container(
@@ -117,7 +147,7 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
       onPressed: onClick,
       shape: CircleBorder(),
       child: Padding(
-        padding: EdgeInsets.all(12),
+        padding: EdgeInsets.all(0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,

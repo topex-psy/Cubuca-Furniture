@@ -26,11 +26,16 @@ class PromoApi {
 }
 
 Future<dynamic> getListPromo({keyword = ""}) async {
-  final http.Response response = await http.get(
-    Uri.encodeFull(APP_HOST + "api/get/promo?keyword=$keyword"),
-    headers: {"Accept": "application/json"}
-  );
-  return json.decode(response.body);
+  try {
+    final http.Response response = await http.get(
+      Uri.encodeFull(APP_HOST + "api/get/promo?keyword=$keyword"),
+      headers: {"Accept": "application/json"}
+    );
+    return json.decode(response.body);
+  } catch (e) {
+    print(e);
+    return null;
+  }
 }
 
 Future<PromoApi> getPromo({int id}) async {

@@ -168,6 +168,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
   Future<dynamic> _getPromoTerbaru() {
     if (!_isInternetOK) return null;
     return getPromoTerbaru().then((prm) {
+      print("DATA PROMO TERBARU RESPONSE:" + prm.toString());
       Future.delayed(Duration(milliseconds: 2000), () {
         if (widget.val == 0.0) h.showAlert(prm.judul, Column(children: <Widget>[
           FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: prm.gambar, fit: BoxFit.contain,),
@@ -571,7 +572,7 @@ class MainMenu extends StatefulWidget {
   _MainMenuState createState() => _MainMenuState();
 }
 
-class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
+class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin, WidgetsBindingObserver {
   AnimationController _pulseController;
   AnimationController _animationController;
   Animation firstAnimation, delayedAnimation, muchDelayedAnimation;
@@ -583,6 +584,7 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _animationController = AnimationController(duration: Duration(seconds: 2), vsync: this);
     firstAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _animationController, curve: Interval(0.2, 0.8, curve: Curves.fastOutSlowIn)));
@@ -609,9 +611,27 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print("AppLifecycleState = $state");
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _getNumWishlist();
+        _getNumPromo();
+        break;
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.paused:
+        break;
+      case AppLifecycleState.suspending:
+        break;
+    }
   }
 
   Future<dynamic> _getNumWishlist() async {
@@ -632,10 +652,10 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     });
   }
 
-  Future _openWishlist() async {
+  /* Future _openWishlist() async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => Wishlist()));
     _getNumWishlist();
-  }
+  } */
 
   @override
   Widget build(BuildContext context) {
@@ -670,8 +690,8 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                   child: Transform.scale(
                     scale: firstAnimation.value * _pulse.value,
                     child: MenuButton(icon: Icons.favorite, teks: "Wishlist", ukuranIcon: 38.5, warnaIcon: Colors.red, notif: _numWishlist, aksi: () {
-                      //Navigator.push(context, MaterialPageRoute(builder: (context) => Wishlist()));
-                      _openWishlist();
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => Wishlist()));
+                      //_openWishlist();
                     },),
                   ),
                 ),
@@ -689,6 +709,7 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                   child: Transform.scale(
                     scale: muchDelayedAnimation.value * _pulse.value,
                     child: MenuButton(icon: Icons.map, teks: "Lokasi", ukuranIcon: 24.2, warnaIcon: Colors.lightGreen, aksi: () {
+                      //Navigator.of(context).push(TransparentRoute(builder: (BuildContext context) => Lokasi()));
                       Navigator.push(context, MaterialPageRoute(builder: (context) => Lokasi()));
                     },),
                   ),
