@@ -2,14 +2,12 @@ import 'dart:ui';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/bubbles.dart';
-import 'widgets/buttons.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 import 'models/produk.dart';
 import 'utils/utils.dart';
 import 'detail_produk.dart';
@@ -409,11 +407,17 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
 
     KategoriProduk katalog = widget.item;
 
-    Widget searchBar = TextField(
+    /* Widget searchBar = TextField(
       controller: _searchController,
       decoration: InputDecoration(hintText: "Cari produk", prefixIcon: Icon(Icons.search), border: InputBorder.none),
       focusNode: _searchFocusNode,
       textInputAction: TextInputAction.search,
+      onChanged: _onSearchTextChanged,
+    ); */
+    Widget searchBar = SearchBar(
+      placeholder: "Cari produk",
+      controller: _searchController,
+      focusNode: _searchFocusNode,
       onChanged: _onSearchTextChanged,
     );
 

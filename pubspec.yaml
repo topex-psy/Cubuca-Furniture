@@ -41,6 +41,8 @@ dependencies:
   flutter_sticky_header: ^0.4.0
   cached_network_image: ^1.1.1
   preload_page_view: ^0.1.4
+  scratcher: ^1.2.0
+  flip_card: ^0.4.1
 
 dev_dependencies:
   flutter_test:

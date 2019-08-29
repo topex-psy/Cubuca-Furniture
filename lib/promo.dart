@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:scratcher/scratcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_image/transparent_image.dart';
-import 'widgets/buttons.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 import 'models/promo.dart';
 import 'utils/utils.dart';
 
@@ -19,6 +19,7 @@ class _PromoState extends State<Promo> {
 
   List<PromoApi> _listPromo = [];
   List<PromoApi> _listPromoFiltered = [];
+  List<String> _listCode = [];
 
   Future<dynamic> _getListPromo() {
     return getListPromo().then((responseJson) {
@@ -29,10 +30,7 @@ class _PromoState extends State<Promo> {
           _listPromo = [];
           _listPromoFiltered = [];
         });
-        h.showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text("Kembali"),
-        ));
+        h.loadFail();
       } else {
         var result = responseJson["result"];
         List<PromoApi> listPromo = [];
@@ -56,7 +54,7 @@ class _PromoState extends State<Promo> {
     _searchFocusNode = FocusNode();
     _searchController = TextEditingController();
     _searchBarVisible = false;
-    _getListPromo();
+    _getMyPromoCode();
   }
 
   @override
@@ -70,17 +68,16 @@ class _PromoState extends State<Promo> {
     if (keyword == null || keyword.isEmpty) {
       print("SEARCH KEYWORD EMPTY");
       setState(() => _listPromo = []);
-      _getListPromo();
+      _getMyPromoCode();
       return;
     }
 
     print("SEARCH KEYWORD: \"$keyword\" (_listProduk.length = ${_listPromo.length})");
-    keyword = keyword.toLowerCase();
     List<PromoApi> _listPromoFound = [];
     List<PromoApi> _listPromoAll = [];
     _listPromoAll.addAll(_listPromo);
     _listPromo.forEach((PromoApi promo) {
-      if (promo.judul.toLowerCase().contains(keyword)) { //TODO deskripsi, dll
+      if (h.searchDo([promo.judul, promo.deskripsi], keyword)) {
         _listPromoFound.add(promo);
       }
     });
@@ -90,6 +87,15 @@ class _PromoState extends State<Promo> {
       _listPromo = _listPromoAll;
     });
   }
+
+  Future<dynamic> _getMyPromoCode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _listCode = prefs.getStringList('myPromoCode') ?? [];
+      _getListPromo();
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -158,15 +164,7 @@ class _PromoState extends State<Promo> {
       ),
       body: SafeArea(
         child: _listPromo.isEmpty ? Center(child: LoadingCircle(),) : (_listPromoFiltered.isEmpty ? Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Padding(padding: EdgeInsets.only(top: 24, bottom: 12), child: Icon(Icons.face, color: Colors.grey[600], size: 100,),),
-              Text("Tidak ada promo untuk saat ini", style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey[600])),
-              SizedBox(height: 50,),
-            ],
-          ),
+          child: EmptyContent(teks: "Tidak ada promo untuk saat ini!", icon: Icons.local_offer,),
         ) : ListView.builder(
           padding: EdgeInsets.only(bottom: 40),
           itemCount: _listPromoFiltered.length,
@@ -187,49 +185,11 @@ class _PromoState extends State<Promo> {
                       children: <Widget>[
                         Text("${item.judul}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                         SizedBox(height: 8,),
-                        Html(
-                          data: item.penawaran,
-                          onLinkTap: (url) {
-                            print("Opening $url...");
-                          },
-                        ),
+                        h.html(item.penawaran),
                       ],
                     ),
                   ),
-                  Container(
-                    color: Colors.blue.withOpacity(0.2),
-                    padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                      Row(children: <Widget>[
-                        Icon(Icons.local_offer),
-                        SizedBox(width: 4,),
-                        RichText(
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontFamily: "Catamaran",
-                              height: 0.75,
-                              color: Colors.black,
-                            ),
-                            children: <TextSpan>[
-                              TextSpan(text: 'Kode: '),
-                              TextSpan(text: item.kodePromo, style: TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ],),
-                      UiButton(color: Colors.blue, icon: Icons.filter_none, teks: "Salin Kode", aksi: () {
-                        Clipboard.setData(ClipboardData(text: item.kodePromo));
-                        key.currentState.showSnackBar(
-                          SnackBar(content: Text("Kode telah disalin!"),)
-                        );
-                      },),
-                    ],),
-                  ),
+                  ScratchCode(kode: item.kodePromo, scaffoldKey: key, isCompleted: _listCode.contains(item.kodePromo)),
                 ],
               ),
             );
@@ -237,5 +197,103 @@ class _PromoState extends State<Promo> {
         )),
       ),
     );
+  }
+}
+
+class ScratchCode extends StatefulWidget {
+  ScratchCode({@required this.kode, @required this.scaffoldKey, this.isCompleted = false});
+  final String kode;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final bool isCompleted;
+
+  @override
+  _ScratchCodeState createState() => _ScratchCodeState();
+}
+
+class _ScratchCodeState extends State<ScratchCode> {
+  double _progress = 0.0;
+
+  Future<dynamic> _setMyPromoCode(String kode) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> myPromoCode = prefs.getStringList('myPromoCode') ?? [];
+    if (!myPromoCode.contains(kode)) {
+      myPromoCode.add(kode);
+      await prefs.setStringList('myPromoCode', myPromoCode);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tileContent = Container(
+      color: Colors.blue.withOpacity(0.2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.only(top: 12.0, bottom: 12.0, left: 20.0, right: 6.0),
+            child: Icon(Icons.local_offer),
+          ),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontFamily: "Catamaran",
+                  height: 0.75,
+                  color: Colors.black,
+                ),
+                children: <TextSpan>[
+                  TextSpan(text: 'Kode promo: '),
+                  TextSpan(text: widget.kode, style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+          (widget.isCompleted || _progress > 70.0) ? InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: widget.kode));
+              widget.scaffoldKey.currentState.showSnackBar(
+                SnackBar(content: Text("Kode telah disalin!"),)
+              );
+            }, child: Container(
+              color: Colors.black12,
+              child: FlatButton(
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                onPressed: null,
+                child: Icon(Icons.filter_none, color: Colors.white,),
+              ),
+            )
+          ) : SizedBox(),
+        ],
+      ),
+    );
+
+    return widget.isCompleted ? tileContent : Stack(children: <Widget>[
+      Scratcher(
+        accuracy: ScratchAccuracy.medium,
+        brushSize: 35,
+        threshold: 70,
+        color: Colors.blueGrey,
+        onChange: (value) {
+          print("Scratch progress: $value%");
+          setState(() {
+            _progress = value; 
+          });
+        },
+        onThreshold: () {
+          print("Threshold reached, you won!");
+          _setMyPromoCode(widget.kode);
+        },
+        child: tileContent,
+      ),
+      _progress > 0.0 ? Container() : Positioned.fill(child:
+        IgnorePointer(
+          child: Center(
+            child: Text("Gosok untuk melihat kode promo!", style: TextStyle(color: Colors.grey[400], fontSize: 15.0, fontStyle: FontStyle.italic)),
+          ),
+        ),
+      ),
+    ],);
   }
 }

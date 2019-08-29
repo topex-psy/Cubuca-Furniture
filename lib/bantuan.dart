@@ -1,7 +1,6 @@
-import 'package:cubuca_furniture/widgets/buttons.dart';
 import 'package:flutter/material.dart';
 import 'utils/utils.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 
 class Bantuan extends StatefulWidget {
   @override

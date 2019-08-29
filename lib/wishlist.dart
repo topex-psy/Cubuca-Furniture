@@ -1,10 +1,8 @@
-import 'package:cubuca_furniture/widgets/buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/produk.dart';
-//import 'widgets/buttons.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 import 'utils/utils.dart';
 import 'detail_produk.dart';
 
@@ -102,7 +100,7 @@ class _WishlistState extends State<Wishlist> {
     List<Produk> _listWishlistAll = [];
     _listWishlistAll.addAll(_listWishlist);
     _listWishlist.forEach((Produk produk) {
-      if (produk.judul.toLowerCase().contains(keyword)) { //TODO deskripsi, dll
+      if (h.searchDo([produk.judul, produk.deskripsi, produk.sku], keyword)) {
         _listWishlistFound.add(produk);
       }
     });

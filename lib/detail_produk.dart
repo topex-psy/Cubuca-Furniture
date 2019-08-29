@@ -59,7 +59,10 @@ class _DetailProdukState extends State<DetailProduk> with SingleTickerProviderSt
                       Positioned.fill(child: Hero(
                         tag: "Produk${widget.item.id}",
                         child: GestureDetector(
-                          onTap: () { print("GAMBARNYA = ${Uri.encodeFull(widget.item.gambar)}"); }, //TODO slideshow galeri
+                          onTap: () {
+                            //TODO slideshow galeri
+                            print("GAMBARNYA = ${Uri.encodeFull(widget.item.gambar)}");
+                          },
                           child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: Uri.encodeFull(widget.item.gambar), fit: BoxFit.cover,),
                         ),
                       ),),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:audioplayers/audio_cache.dart';
 import 'package:share/share.dart';
-import '../widgets/buttons.dart';
+import '../widgets/widgets.dart';
 import '../models/produk.dart';
 import 'constants.dart';
 
@@ -117,7 +118,8 @@ class MyHelper {
       barrierDismissible: true,
       barrierLabel: '',
       context: context,
-      pageBuilder: (context, animation1, animation2) {}
+      //pageBuilder: (context, animation1, animation2) {}
+      pageBuilder: (context, animation1, animation2) => Container()
     );
   }
 
@@ -142,6 +144,18 @@ class MyHelper {
     );
   }
 
+  loadFail() {
+    showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
+      onPressed: () {
+        //Navigator.of(context).pop(true);
+        //Navigator.of(context).pop(true);
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      },
+      child: Text("Kembali"),
+    ));
+  }
+
+  //fungsi untuk menampilkan popup dialog kontak kami
   kontakKami({String judul = "", String pesan = ""}) {
     showAlert("Hubungi Kami",
       ListBody(
@@ -157,6 +171,7 @@ class MyHelper {
     );
   }
 
+  //fungsi untuk menampilkan popup dialog share ke sosmed
   bagikan(String urlString, {String pesan = ""}) {
     showAlert("Bagikan",
       ListBody(
@@ -172,16 +187,35 @@ class MyHelper {
     );
   }
 
+  //fungsi truncate teks ke panjang maksimum dengan penambahan ellipsis
   String maxlength(String teks, int maxlength) {
     return teks.length > maxlength ? teks.substring(0, maxlength) + "..." : teks;
   }
 
+  //fungsi yang mengembalikan teks versi html
   Html html(String htmlString) {
     return Html(
       data: htmlString,
       onLinkTap: (url) {
         print("OPENING URL $url...");
       },
+    );
+  }
+
+  //fungsi untuk menentukan apakah data batch mengandung keyword tertentu
+  bool searchDo(List<String> data, String keyword) {
+    keyword = keyword.toLowerCase();
+    for (final dat in data) {
+      if (dat.toLowerCase().contains(keyword)) return true;
+    }
+    return false;
+  }
+
+  //fungsi untuk menyalin teks
+  salin(String teks) {
+    Clipboard.setData(ClipboardData(text: teks));
+    Scaffold.of(context).showSnackBar(
+      SnackBar(content: Text("Kode telah disalin!"),)
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
@@ -5,15 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'models/produk.dart';
 import 'models/promo.dart';
 import 'widgets/bubbles.dart';
-import 'widgets/buttons.dart';
 import 'widgets/shapes.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 import 'utils/constants.dart';
 import 'utils/mixins.dart';
 import 'utils/routes.dart';
@@ -23,8 +24,8 @@ import 'katalog.dart';
 import 'lokasi.dart';
 import 'promo.dart';
 import 'wishlist.dart';
+import 'main_bonus.dart';
 import 'main_stats.dart';
-import 'main_people.dart';
 
 Future main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -98,7 +99,8 @@ class MainScreenState extends State<MainScreen> {
   }
 
   Future<bool> _onWillPop() async {
-    if (_page == 0 && _willExit) return h.showConfirm(judul: "Tutup Aplikasi", pesan: "Apakah Anda yakin ingin menutup aplikasi ini?", aksi: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'), doOnCancel: () {
+    bool scratchCompleted = false; //TODO cek jika udah gosok kupon
+    if (_page == 0 && (_willExit || scratchCompleted)) return h.showConfirm(judul: "Tutup Aplikasi", pesan: "Apakah Anda yakin ingin menutup aplikasi ini?", aksi: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'), doOnCancel: () {
       _pageController.animateToPage(1, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
     }) ?? false;
     if (_page == 1) {
@@ -117,13 +119,14 @@ class MainScreenState extends State<MainScreen> {
       onWillPop: _onWillPop,
       child: Scaffold(
         backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: false,
         body: Container(
           child: PageView(
             //physics: NeverScrollableScrollPhysics(),
             controller: _pageController,
             onPageChanged: _onPageChanged,
             children: <Widget>[
-              PeoplePage(key: _pageKeys[0], val: _pageValue,),
+              BonusPage(key: _pageKeys[0], val: _pageValue,),
               Home(key: _pageKeys[1], val: _pageValue - 1.0, pgc: _pageController),
               StatsPage(key: _pageKeys[2], val: _pageValue - 2.0,),
             ],
@@ -140,6 +143,7 @@ class MainScreenState extends State<MainScreen> {
   }
 
   void _onPageChanged(int page) {
+    FocusScope.of(context).requestFocus(FocusNode());
     setState(() {
       _page = page;
       if (page > 0 && _willExit) _willExit = false;
@@ -357,35 +361,44 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
                   SafeArea(
                     child: Column(
                       children: <Widget>[
-                        Stack(
-                          children: <Widget>[
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                margin: EdgeInsets.all(13),
-                                child: IconButton(
-                                  color: Colors.black87,
-                                  icon: Icon(Icons.sort),
-                                  tooltip: "Menu",
-                                  onPressed: () {
-                                    widget.pgc.animateToPage(2, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
-                                  },
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Stack(
+                            children: <Widget>[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Material(
+                                  type: MaterialType.transparency,
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  child: IconButton(
+                                    color: Colors.black87,
+                                    icon: Icon(Icons.sort),
+                                    tooltip: "Menu",
+                                    onPressed: () {
+                                      widget.pgc.animateToPage(2, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                color: Colors.black87,
-                                icon: Icon(Icons.search),
-                                tooltip: "Cari",
-                                onPressed: () {
-                                  widget.pgc.animateToPage(0, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
-                                },
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Material(
+                                  type: MaterialType.transparency,
+                                  shape: CircleBorder(),
+                                  child: IconButton(
+                                    color: Colors.black87,
+                                    icon: Icon(MdiIcons.gift),
+                                    tooltip: "Cek Keberuntungan",
+                                    onPressed: () {
+                                      widget.pgc.animateToPage(0, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        SizedBox(height: 5,),
                         Expanded(
                           child: MainMenu(isStarted: _isStarted, pageValue: _pageValue,),
                         ),
@@ -443,7 +456,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
                 transitionOnUserGestures: true,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  //child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: item.gambar, height: 250, fit: BoxFit.cover,),
                   child: CachedNetworkImage(
                     imageUrl: Uri.encodeFull(item.gambar),
                     placeholder: (context, url) => Container(height: 250, padding: EdgeInsets.all(50), child: CircularProgressIndicator()),
@@ -454,7 +466,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
                     fit: BoxFit.cover,
                   ),
                 ),
-                // child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: item.gambar, height: 250, fit: BoxFit.cover,),
               ),
             ),
           ),
@@ -533,10 +544,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
     return AnimatedBuilder(
       animation: _nudgeController,
       builder: (BuildContext context, Widget child) {
-        return Transform(
+        return Transform.scale(
           alignment: FractionalOffset.center,
-          transform: Matrix4.identity()..scale(scaleVal, scaleVal),
-          child: position == 0 ? Opacity(opacity: 1.0 - min(1.0, _pageValue), child: Transform(transform: Matrix4.translationValues((-50.0 * min(1.0, _pageValue)), 0, 0), child: FlatButton(
+          scale: scaleVal,
+          child: position == 0 ? Opacity(opacity: 1.0 - min(1.0, _pageValue), child: Transform.translate(offset: Offset(-50.0 * min(1.0, _pageValue), 0), child: FlatButton(
             highlightColor: Colors.transparent,
             splashColor: Colors.transparent,
             onPressed: () => _pageController.animateToPage(1, duration: Duration(milliseconds: 800), curve: Curves.easeOutExpo),
@@ -577,6 +588,8 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   Animation firstAnimation, delayedAnimation, muchDelayedAnimation;
   Animation _pulse;
 
+  Timer _getNoticeNum;
+
   int _numWishlist = 0;
   int _numPromo = 0;
 
@@ -603,14 +616,18 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
       }
     }));
 
-    _getNumWishlist();
-    _getNumPromo();
+    _getNoticeNum = Timer.periodic(Duration(seconds: 5), (Timer t) {
+      //print("GET NOTICE NUM ...");
+      _getNumWishlist();
+      _getNumPromo();
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _pulseController.dispose();
+    _getNoticeNum.cancel();
     super.dispose();
   }
 
@@ -622,13 +639,13 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
 
   Future<dynamic> _getNumPromo() {
     return getListPromo().then((responseJson) {
-      print("DATA PROMO RESPONSE:" + responseJson.toString());
+      //print("DATA PROMO RESPONSE:" + responseJson.toString());
       if (responseJson != null) _numPromo = responseJson["get"]["TOTAL"];
-      print("DATA PROMO BERHASIL DIMUAT!");
+      //print("DATA PROMO BERHASIL DIMUAT!");
     }).catchError((e) {
-      print("DATA PROMO ERROOOOOOOOOOOOR: $e");
+      //print("DATA PROMO ERROOOOOOOOOOOOR: $e");
     }).whenComplete(() {
-      print("DATA PROMO DONEEEEEEEEEEEEE!");
+      //print("DATA PROMO DONEEEEEEEEEEEEE!");
     });
   }
 

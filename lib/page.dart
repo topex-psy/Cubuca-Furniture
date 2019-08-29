@@ -1,8 +1,7 @@
-import 'package:cubuca_furniture/widgets/buttons.dart';
 import 'package:flutter/material.dart';
 import 'models/page.dart';
 import 'utils/utils.dart';
-import 'widgets/progress.dart';
+import 'widgets/widgets.dart';
 
 class Page extends StatefulWidget {
   Page({Key key, this.what}) : super(key: key);
