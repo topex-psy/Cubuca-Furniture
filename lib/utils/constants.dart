@@ -1,14 +1,12 @@
 const APP_NAME = "Cubuca";
 const APP_TAGLINE = "Furniture & Perabot";
-const APP_HOST = "http://192.168.100.2/cubuca/public/"; //TODO pake url web kalo udah dihosting
+const APP_HOST = "http://192.168.42.242/cubuca/public/"; //TODO pake url web kalo udah dihosting
 
-/* class MenuPojok {
-  static const String rate = "Beri Rating";
-  static const String about = "Tentang Kami";
-  static const String help = "Bantuan";
-  static const String career = "Jadi Mitra";
-  static const List<String> listMenu = [rate, "", about, help, career];
-} */
+class MenuUtama {
+  static const String wishlist = "Favorit";
+  static const String promo = "Promo";
+  static const String lokasi = "Lokasi";
+}
 
 class Kontak {
   static String nama = "Cubuca";

@@ -30,7 +30,7 @@ class _SplashState extends State<Splash> {
                   "images/icon.png",
                   width: _iconSize,
                   height: _iconSize,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),),
                 SizedBox(height: 20,),
                 Text(APP_NAME, style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600)),

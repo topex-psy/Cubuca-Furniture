@@ -12,6 +12,7 @@ class Promo extends StatefulWidget {
 }
 
 class _PromoState extends State<Promo> with TickerProviderStateMixin {
+  FixedExtentScrollController fixedExtentScrollController;
   List<PromoApi> _listPromo = [];
   List<PromoApi> _listPromoFiltered = [];
   List<String> _listCode = [];
@@ -46,6 +47,7 @@ class _PromoState extends State<Promo> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    fixedExtentScrollController = FixedExtentScrollController();
     _getMyPromoCode();
   }
 
@@ -106,11 +108,10 @@ class _PromoState extends State<Promo> with TickerProviderStateMixin {
       body: SafeArea(
         child: _listPromo.isEmpty ? Center(child: LoadingCircle(),) : (_listPromoFiltered.isEmpty ? Center(
           child: EmptyContent(teks: "Tidak ada promo untuk saat ini!", icon: Icons.local_offer,),
-        ) : ListView.builder(
-          padding: EdgeInsets.only(bottom: 40),
-          itemCount: _listPromoFiltered.length,
-          itemBuilder: (context, index) {
-            PromoApi item = _listPromoFiltered[index];
+        ) : ListWheelScrollView(
+          controller: fixedExtentScrollController,
+          physics: FixedExtentScrollPhysics(),
+          children: _listPromoFiltered.map((item) {
             return Card(
               shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
               margin: EdgeInsets.only(top: 20, left: 20, right: 20),
@@ -124,7 +125,7 @@ class _PromoState extends State<Promo> with TickerProviderStateMixin {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(item.judul, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+                        Text("${item.judul}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                         SizedBox(height: 8,),
                         h.html(item.penawaran),
                       ],
@@ -134,7 +135,8 @@ class _PromoState extends State<Promo> with TickerProviderStateMixin {
                 ],
               ),
             );
-          },
+          }).toList(),
+          itemExtent: 60.0,
         )),
       ),
     );

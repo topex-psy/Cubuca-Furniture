@@ -12,16 +12,12 @@ class Wishlist extends StatefulWidget {
 }
 
 class _WishlistState extends State<Wishlist> {
-  FocusNode _searchFocusNode;
-  TextEditingController _searchController;
-  bool _searchBarVisible;
-  bool _isLoaded = false;
-
   List<String> _myWishlist = [];
   List<Produk> _listWishlist = [];
   List<Produk> _listWishlistFiltered = [];
 
   final key = GlobalKey<ScaffoldState>();
+  bool _isLoaded = false;
 
   Future<dynamic> _getMyWishlist() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -38,10 +34,7 @@ class _WishlistState extends State<Wishlist> {
           _listWishlist = [];
           _listWishlistFiltered = [];
         });
-        h.showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text("Kembali"),
-        ));
+        h.loadFail();
       } else {
         var result = responseJson["result"];
         List<Produk> listWishlist = [];
@@ -114,16 +107,16 @@ class _WishlistState extends State<Wishlist> {
   @override
   void initState() {
     super.initState();
-    _searchFocusNode = FocusNode();
-    _searchController = TextEditingController();
-    _searchBarVisible = false;
     _getMyWishlist();
+  }
+  
+  @override
+  void setState(fn) {
+    if (mounted) super.setState(fn);
   }
 
   @override
   void dispose() {
-    _searchFocusNode.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -135,13 +128,6 @@ class _WishlistState extends State<Wishlist> {
   Widget build(BuildContext context) {
     h = MyHelper(context);
     a = MyAppHelper(context);
-    Widget searchBar = TextField(
-      controller: _searchController,
-      decoration: InputDecoration(hintText: "Cari wishlist", prefixIcon: Icon(Icons.search)),
-      focusNode: _searchFocusNode,
-      textInputAction: TextInputAction.search,
-      onChanged: _onSearchTextChanged,
-    );
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -151,48 +137,7 @@ class _WishlistState extends State<Wishlist> {
           automaticallyImplyLeading: false,
           backgroundColor: HSLColor.fromColor(Colors.red).withLightness(0.85).toColor(),
           titleSpacing: 0.0,
-          title: Row(children: <Widget>[
-            InkWell(
-              onTap: () => Navigator.of(context).pop(true),
-              child: Container(
-                padding: EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 20),
-                child: Row(children: <Widget>[
-                  Icon(Icons.chevron_left, color: Colors.black87,),
-                  _searchBarVisible ? Container() : SizedBox(width: 8,),
-                  _searchBarVisible ? Container() : Text("Wishlist", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
-                ],),
-              ),
-            ),
-            Expanded(
-              child: _searchBarVisible ? Stack(children: <Widget>[
-                searchBar,
-                Align(alignment: Alignment.centerRight, child: IconButton(
-                  onPressed: () {
-                    if (_listWishlist.isEmpty) return;
-                    setState(() {
-                      _searchBarVisible = !_searchBarVisible;
-                      _listWishlist = [];
-                    });
-                    _searchController.text = "";
-                    _getListWishlist();
-                  },
-                  icon: Icon(Icons.close, size: 16,),
-                ),)
-              ],) : Container(),
-            ),
-            _searchBarVisible ? Container() : IconButton(
-              color: Colors.black87,
-              icon: Icon(Icons.search),
-              tooltip: "Cari",
-              onPressed: () {
-                if (_listWishlist.isEmpty) return;
-                setState(() {
-                  _searchBarVisible = !_searchBarVisible;
-                });
-                FocusScope.of(context).requestFocus(_searchFocusNode);
-              },
-            ),
-          ],),
+          title: NavTitleBar(judul: "Favorit Saya", searchHint: "Cari favorit", onSearchTextChanged: _onSearchTextChanged,),
         ),
         body: SafeArea(
           child: Stack(children: <Widget>[
@@ -238,7 +183,7 @@ class _WishlistState extends State<Wishlist> {
                         Positioned(top: 4, right: 4, child: IconButton(
                           icon: Icon(Icons.favorite, color: Colors.red,),
                           onPressed: () {
-                            h.showConfirm(judul: "Hapus Wishlist", pesan: "Apakah Anda yakin ingin menghapus \"${item.judul}\" dari wishlist?", aksi: () => _delMyWishlist(item));
+                            h.showConfirm(judul: "Hapus Favorit", pesan: "Apakah Anda yakin ingin menghapus \"${item.judul}\" dari favorit?", aksi: () => _delMyWishlist(item));
                           },
                         ),),
                       ],),

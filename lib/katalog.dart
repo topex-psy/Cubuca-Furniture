@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
+import 'package:bubble_tab_indicator/bubble_tab_indicator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,9 @@ import 'widgets/widgets.dart';
 import 'models/produk.dart';
 import 'utils/utils.dart';
 import 'detail_produk.dart';
+
+
+const double sliverHeaderheight = 42.0;
 
 class Katalog extends StatefulWidget {
   Katalog({Key key, this.item, this.color}) : super(key: key);
@@ -75,6 +79,12 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
     print("_createListProdukItem THUMBNAIL = ${Uri.encodeFull(item.thumbnail)}");
     bool isWishlist = _myWishlist.contains(item.id.toString());
     String urlThumb = item.thumbnail;
+    Future _keLamanProduk() async {
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProduk(item: item, color: widget.color,)));
+      _onSearchTextChanged(_searchController.text);
+      //_muatData();
+    }
+    //void Function() _keLamanProduk = () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProduk(item: item, color: widget.color,)));
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -90,7 +100,7 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProduk(item: item, color: widget.color,))),
+            onTap: _keLamanProduk,
             child: Card(
               clipBehavior: Clip.antiAlias,
               shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(35)),
@@ -118,18 +128,28 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 SizedBox(height: 5,),
-                Text(item.judul, style: TextStyle(fontSize: 14, height: 1.0, fontWeight: FontWeight.bold)),
+                GestureDetector(
+                  onTap: _keLamanProduk,
+                  child: Text(item.judul, style: TextStyle(fontSize: 14, height: 1.0, fontWeight: FontWeight.bold)),
+                ),
                 SizedBox(height: 5,),
                 Text("Kode: ${item.sku}", style: TextStyle(fontSize: 12, height: 1.0, fontStyle: FontStyle.italic, color: Colors.grey[600])),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     UiButton(color: item.isTersedia?Colors.greenAccent[700]:Colors.blue, teks: item.isTersedia?"Beli":"Pre-Order", aksi: () => a.beliProduk(item),),
-                    SizedBox(width: 8.0,),
+                    SizedBox(width: 4.0,),
                     IconButton(
+                      padding: EdgeInsets.zero,
                       icon: Icon(isWishlist ? Icons.favorite : Icons.favorite_border, color: isWishlist ? Colors.red : Colors.grey,),
                       tooltip: isWishlist ? "Hapus wishlist" : "Tambahkan ke wishlist",
-                      onPressed: () => _setMyWishlist(item, isWishlist?0:1),
+                      onPressed: () => _setMyWishlist(item, isWishlist ? 0 : 1),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(Icons.share, color: Colors.grey,),
+                      tooltip: "Bagikan",
+                      onPressed: () => h.bagikan(url: item.link, judul: item.judul, body: "Menurut saya produk ini sangat menarik!"),
                     ),
                   ],
                 ),
@@ -150,11 +170,11 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
     print("_createStackProduk OFFSET = $offset, JUMLAH PRODUK = ${j.jumlah}");
     return SliverStickyHeaderBuilder(
       builder: (context, state) => Container(
-        height: 44.0,
-        color: widget.color.withLightness(state.isPinned ? 0.85 : 0.9).toColor(), //state.scrollPercentage
+        height: sliverHeaderheight,
+        color: state.isPinned ? widget.color.withLightness(0.85).toColor() : Colors.transparent,
         padding: EdgeInsets.symmetric(horizontal: 16.0),
         alignment: Alignment.centerLeft,
-        child: Text(j.judul, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),),
+        child: Text(j.judul, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),),
       ),
       sliver: SliverFixedExtentList(
         itemExtent: 130.0,
@@ -185,6 +205,16 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
         }).values.toList(),
       ),
     );
+  }
+
+  _muatData() {
+    _getMyWishlist().then((result) {
+      _getData();
+    }).catchError((e) {
+      print("GET WISHLIST ERROOOOOOOOOOOOR: $e");
+    }).whenComplete(() {
+      print("GET WISHLIST DONEEEEEEEEEEEEE!");
+    });
   }
 
   Future<dynamic> _getData() {
@@ -273,19 +303,20 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
     _tabController = TabController(vsync: this, length: _listJenisProduk.length);
     _searchFocusNode = FocusNode();
     _searchController = TextEditingController();
-    _getMyWishlist().then((result) {
+    /* _getMyWishlist().then((result) {
       _getData();
     }).catchError((e) {
       print("GET WISHLIST ERROOOOOOOOOOOOR: $e");
     }).whenComplete(() {
       print("GET WISHLIST DONEEEEEEEEEEEEE!");
-    });
+    }); */
     //_getData();
+    _muatData();
 
     _customScrollController.addListener(() {
       double offset = _customScrollController.offset;
       for (int i = _offsetJenisProduk.length - 1; i >= 0; i--) {
-        if (offset >= _offsetJenisProduk[i] * 130.0 + 44.0 * i) {
+        if (offset >= _offsetJenisProduk[i] * 130.0 + sliverHeaderheight * i) {
           _tabController.animateTo(i, duration: Duration(milliseconds: 400), curve: Curves.fastOutSlowIn);
           break;
         }
@@ -319,27 +350,34 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
 
     if ((keyword ?? "").isEmpty) {
       print("SEARCH KEYWORD EMPTY");
-      _getData();
+      //_getData();
+      _muatData();
       return;
     }
 
-    print("SEARCH KEYWORD: \"$keyword\" (_listProduk.length = ${_listProduk.length})");
-    List<Produk> _listProdukFound = [];
-    List<Produk> _listProdukAll = [];
-    _listProdukAll.addAll(_listProduk);
-    _listProduk.forEach((Produk produk) {
-      if (produk.judul.toLowerCase().contains(keyword.toLowerCase()) ||
-          produk.sku.toLowerCase().contains(keyword.toLowerCase()) ||
-          produk.jenis.toLowerCase().contains(keyword.toLowerCase()) ||
-          produk.kategori.toLowerCase().contains(keyword.toLowerCase())) {
-        _listProdukFound.add(produk);
-      }
-    });
-    print("PANGGIL SETSTATE = _listProdukFiltered, _listProduk");
-    setState(() {
-      _listProdukFiltered = _listProdukFound;
-      _listProduk = _listProdukAll;
-      _getProductTypes();
+    _getMyWishlist().then((result) {
+      print("SEARCH KEYWORD: \"$keyword\" (_listProduk.length = ${_listProduk.length})");
+      List<Produk> _listProdukFound = [];
+      List<Produk> _listProdukAll = [];
+      _listProdukAll.addAll(_listProduk);
+      _listProduk.forEach((Produk produk) {
+        if (produk.judul.toLowerCase().contains(keyword.toLowerCase()) ||
+            produk.sku.toLowerCase().contains(keyword.toLowerCase()) ||
+            produk.jenis.toLowerCase().contains(keyword.toLowerCase()) ||
+            produk.kategori.toLowerCase().contains(keyword.toLowerCase())) {
+          _listProdukFound.add(produk);
+        }
+      });
+      print("PANGGIL SETSTATE = _listProdukFiltered, _listProduk");
+      setState(() {
+        _listProdukFiltered = _listProdukFound;
+        _listProduk = _listProdukAll;
+        _getProductTypes();
+      });
+    }).catchError((e) {
+      print("GET WISHLIST ERROOOOOOOOOOOOR: $e");
+    }).whenComplete(() {
+      print("GET WISHLIST DONEEEEEEEEEEEEE!");
     });
   }
 
@@ -364,7 +402,8 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
   }
 
   Widget _widgetTabJenis() {
-    return _listJenisProduk.isEmpty ? Container() : TabBar(
+    if (_listJenisProduk.isEmpty) return Container();
+    /* return TabBar(
       indicatorWeight: 2,
       indicatorColor: widget.color.withLightness(0.7).toColor(),
       controller: _tabController,
@@ -374,9 +413,26 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
       tabs: _listJenisProduk.asMap().map((int i, JenisProduk j) {
         return MapEntry(i, GestureDetector(
           onTap: () {
-            _customScrollController.animateTo(130.0 * _offsetJenisProduk[i] + 44.0 * i, duration: Duration(milliseconds: 800), curve: Curves.fastOutSlowIn);
+            _customScrollController.animateTo(130.0 * _offsetJenisProduk[i] + sliverHeaderheight * i, duration: Duration(milliseconds: 800), curve: Curves.fastOutSlowIn);
           },
           child: Container(height: 40.0, alignment: Alignment.center, child: Text(j.judul),),
+        ));
+      }).values.toList(),
+    ); */
+    return TabBar(
+      controller: _tabController,
+      isScrollable: true,
+      indicatorSize: TabBarIndicatorSize.tab,
+      indicator: BubbleTabIndicator(
+        indicatorHeight: 1.0,
+        indicatorColor: widget.color.withLightness(0.7).toColor(),
+        tabBarIndicatorSize: TabBarIndicatorSize.tab,
+        insets: EdgeInsets.only(left: 40, right: 40, top: 6),
+      ),
+      tabs: _listJenisProduk.asMap().map((int i, JenisProduk j) {
+        return MapEntry(i, GestureDetector(
+          onTap: () => _customScrollController.animateTo(130.0 * _offsetJenisProduk[i] + sliverHeaderheight * i, duration: Duration(milliseconds: 800), curve: Curves.fastOutSlowIn),
+          child: Container(height: 60.0, alignment: Alignment.topCenter, child: Text(j.judul, style: TextStyle(height: 2.0, fontSize: 14.0),),),
         ));
       }).values.toList(),
     );
@@ -407,17 +463,11 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
 
     KategoriProduk katalog = widget.item;
 
-    /* Widget searchBar = TextField(
+    Widget searchBar = TextField(
       controller: _searchController,
       decoration: InputDecoration(hintText: "Cari produk", prefixIcon: Icon(Icons.search), border: InputBorder.none),
       focusNode: _searchFocusNode,
       textInputAction: TextInputAction.search,
-      onChanged: _onSearchTextChanged,
-    ); */
-    Widget searchBar = SearchBar(
-      placeholder: "Cari produk",
-      controller: _searchController,
-      focusNode: _searchFocusNode,
       onChanged: _onSearchTextChanged,
     );
 
@@ -493,9 +543,12 @@ class _KatalogState extends State<Katalog> with TickerProviderStateMixin {
               }
             ),
             bottom: PreferredSize(
-              preferredSize: Size(h.screenSize().width, 40.0),
+              preferredSize: Size(h.screenSize().width, 60.0),
               child: Material(
-                child: Container(width: h.screenSize().width, child: _widgetTabJenis(),),
+                child: Transform.translate(
+                  offset: Offset(0, 10),
+                  child: Container(width: h.screenSize().width, child: _widgetTabJenis(),),
+                ),
                 color: Colors.white,
               ),
             ),

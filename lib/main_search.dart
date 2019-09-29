@@ -70,8 +70,12 @@ class PeoplePageState extends State<PeoplePage> with MainPageStateMixin {
                   SizedBox(height: 12,),
                   Card(
                     elevation: 8.0,
-                    child: SearchBar(
-                      placeholder: "Cari sesuatu ...",
+                    child: TextField(
+                      //controller: controller,
+                      decoration: InputDecoration(hintText: "Cari sesuatu ...", prefixIcon: Icon(Icons.search), border: InputBorder.none),
+                      //focusNode: focusNode,
+                      textInputAction: TextInputAction.search,
+                      //onChanged: onChanged,
                     ),
                   ),
                 ],)

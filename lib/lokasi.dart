@@ -1,10 +1,20 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'utils/constants.dart';
+
+Future<Uint8List> getBytesFromAsset(String path, int width) async {
+  ByteData data = await rootBundle.load(path);
+  Codec codec = await instantiateImageCodec(data.buffer.asUint8List(), targetWidth: width);
+  FrameInfo fi = await codec.getNextFrame();
+  return (await fi.image.toByteData(format: ImageByteFormat.png)).buffer.asUint8List();
+}
 
 class Lokasi extends StatefulWidget {
   @override
@@ -13,23 +23,31 @@ class Lokasi extends StatefulWidget {
 
 class _LokasiState extends State<Lokasi> {
   Completer<GoogleMapController> _controller = Completer();
-  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
+  Map<MarkerId, Marker> _markers = <MarkerId, Marker>{};
   LatLng _latLng = LatLng(Kontak.lat, Kontak.lng);
   double _zoom = 18.0;
 
   @override
   void initState() {
     super.initState();
-    final MarkerId markerId = MarkerId("primaryAddress");
-    final Marker marker = Marker(
-      alpha: 0.75,
-      icon: BitmapDescriptor.defaultMarkerWithHue(180.0),
-      markerId: markerId,
-      position: _latLng,
-      infoWindow: InfoWindow(title: Kontak.nama, snippet:  Kontak.alamat),
-      onTap: () {},
-    );
-    markers[markerId] = marker;
+
+    Future muatPeta() async {
+      final MarkerId markerId = MarkerId("primaryAddress");
+      final Uint8List markerIcon = await getBytesFromAsset("images/marker.png", 100);
+      final Marker marker = Marker(
+        icon: BitmapDescriptor.fromBytes(markerIcon),
+        alpha: 1.0,
+        markerId: markerId,
+        position: _latLng,
+        infoWindow: InfoWindow(title: Kontak.nama, snippet:  Kontak.alamat),
+        onTap: () {},
+      );
+      setState(() {
+        _markers[markerId] = marker;
+      });
+    }
+    muatPeta();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) { // when widget built
       _animateZoom();
     });
@@ -39,14 +57,6 @@ class _LokasiState extends State<Lokasi> {
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newLatLngZoom(_latLng, _zoom));
   }
-  /* _zoomIn() {
-    if (_zoom < 20.0) setState(() => _zoom += 1.0);
-    _animateZoom();
-  }
-  _zoomOut() {
-    if (_zoom > 10.0) setState(() => _zoom -= 1.0);
-    _animateZoom();
-  } */
 
   _launchMap() async {
     var mapSchema = 'geo:${_latLng.latitude},${_latLng.longitude}';
@@ -86,7 +96,7 @@ class _LokasiState extends State<Lokasi> {
       ),
       body: GoogleMap(
         mapType: MapType.normal,
-        markers: Set<Marker>.of(markers.values),
+        markers: Set<Marker>.of(_markers.values),
         initialCameraPosition: CameraPosition(
           target: _latLng,
           zoom: _zoom,
@@ -95,6 +105,9 @@ class _LokasiState extends State<Lokasi> {
         ),
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
+        },
+        onCameraMove: (CameraPosition cameraPosition) {
+          print("MAP CAMERA POSITION = ${cameraPosition.target.latitude}, ${cameraPosition.target.longitude}");
         },
       ),
     );

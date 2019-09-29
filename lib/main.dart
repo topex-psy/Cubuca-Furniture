@@ -72,7 +72,7 @@ class MainScreenState extends State<MainScreen> {
     GlobalKey(),
   ];
 
-  PageController _pageController;
+  PreloadPageController _pageController;
   double _pageValue;
   int _page;
 
@@ -82,7 +82,7 @@ class MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _page = widget.initialPage ?? 1;
-    _pageController = PageController(viewportFraction: 0.999, initialPage: _page);
+    _pageController = PreloadPageController(viewportFraction: 0.999, initialPage: _page);
     _pageController.addListener(() {
       setState(() => _pageValue = _pageController.page);
     });
@@ -121,8 +121,9 @@ class MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.white,
         resizeToAvoidBottomInset: false,
         body: Container(
-          child: PageView(
+          child: PreloadPageView(
             //physics: NeverScrollableScrollPhysics(),
+            preloadPagesCount: 2,
             controller: _pageController,
             onPageChanged: _onPageChanged,
             children: <Widget>[
@@ -155,7 +156,7 @@ class MainScreenState extends State<MainScreen> {
 class Home extends StatefulWidget {
   Home({Key key, this.val, this.pgc}) : super(key: key);
   final double val;
-  final PageController pgc;
+  final PreloadPageController pgc;
 
   @override
   _HomeState createState() => _HomeState();
@@ -173,7 +174,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
     if (!_isInternetOK) return null;
     return getPromoTerbaru().then((prm) {
       Future.delayed(Duration(milliseconds: 2000), () {
-        if (widget.val == 0.0) h.showAlert(prm.judul, Column(children: <Widget>[
+        if (widget.val == 0.0 && prm.gambar != null) h.showAlert(prm.judul, Column(children: <Widget>[
           FadeInImage.memoryNetwork(placeholder: kTransparentImage, image: prm.gambar, fit: BoxFit.contain,),
           SizedBox(height: 8,),
           Html(data: prm.penawaran),
@@ -260,9 +261,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, MainPageStat
     Future _splashScreen() async {
       Map results = await Navigator.of(context).push(TransparentRoute(builder: (BuildContext context) => Splash()));
       if (results != null && results.containsKey('isStarted')) {
-        setState(() {
-          _isStarted = results['isStarted'];
-        });
+        setState(() { _isStarted = results['isStarted']; });
       }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -670,11 +669,11 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                 Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
                   Expanded(child: Container(),),
                   Transform.scale(scale: 1.0 + ((widget.pageValue - widget.pageValue.floor()) > 0.5 ? 1.0 - (widget.pageValue - widget.pageValue.floor()) : (widget.pageValue - widget.pageValue.floor())) / 5.0, child:
-                    /* GestureDetector(
-                      onTap: () => _splashScreen(),
-                      child: Hero(tag: "SplashLogo", child: Image.asset("images/icon.png", width: 120.0),),
-                    ), */
-                    Hero(tag: "SplashLogo", child: Image.asset("images/icon.png", width: 120.0),),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(TransparentRoute(builder: (BuildContext context) => Splash())),
+                      child: Hero(tag: "SplashLogo", child: Image.asset("images/icon.png", width: 120.0, height: 120.0, fit: BoxFit.contain,),),
+                    ),
+                    //Hero(tag: "SplashLogo", child: Image.asset("images/icon.png", width: 120.0),),
                   ),
                   SizedBox(height: 12,),
                   Text(Kontak.nama, style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),),
@@ -686,7 +685,7 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                   top: 0,
                   child: Transform.scale(
                     scale: firstAnimation.value * _pulse.value,
-                    child: MenuButton(icon: Icons.favorite, teks: "Wishlist", ukuranIcon: 38.5, warnaIcon: Colors.red, notif: _numWishlist, aksi: () {
+                    child: MenuButton(icon: Icons.favorite, teks: MenuUtama.wishlist, ukuranIcon: 38.5, warnaIcon: Colors.red, notif: _numWishlist, aksi: () {
                       //Navigator.push(context, MaterialPageRoute(builder: (context) => Wishlist()));
                       _openWishlist();
                     },),
@@ -697,7 +696,9 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                   top: 64,
                   child: Transform.scale(
                     scale: delayedAnimation.value * _pulse.value,
-                    child: MenuButton(icon: Icons.card_giftcard, teks: "Promo", ukuranIcon: 30.8, warnaIcon: Colors.orange, notif: _numPromo, aksi: () => Navigator.push(context, MaterialPageRoute(builder: (context) => Promo())),),
+                    child: MenuButton(icon: Icons.card_giftcard, teks: MenuUtama.promo, ukuranIcon: 30.8, warnaIcon: Colors.orange, notif: _numPromo, aksi: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => Promo()));
+                    },),
                   ),
                 ),
                 Positioned(
@@ -705,7 +706,7 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                   top: 132,
                   child: Transform.scale(
                     scale: muchDelayedAnimation.value * _pulse.value,
-                    child: MenuButton(icon: Icons.map, teks: "Lokasi", ukuranIcon: 24.2, warnaIcon: Colors.lightGreen, aksi: () {
+                    child: MenuButton(icon: Icons.map, teks: MenuUtama.lokasi, ukuranIcon: 24.2, warnaIcon: Colors.lightGreen, aksi: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => Lokasi()));
                     },),
                   ),

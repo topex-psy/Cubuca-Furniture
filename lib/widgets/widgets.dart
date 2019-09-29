@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /////////////////// loaders ///////////////////////////////////
 class LoadingCircle extends StatelessWidget {
@@ -32,27 +33,121 @@ class LoadingCircle extends StatelessWidget {
   }
 }
 
-/////////////////// buttons ///////////////////////////////////
-class NavBackButton extends StatelessWidget {
-  NavBackButton({@required this.judul});
+/////////////////// navs ///////////////////////////////////
+class NavTitleBar extends StatefulWidget {
+  NavTitleBar({this.judul, this.searchHint, this.searchController, this.onSearchTextChanged});
   final String judul;
+  final String searchHint;
+  final TextEditingController searchController;
+  final void Function(String) onSearchTextChanged;
+
+  @override
+  _NavTitleBarState createState() => _NavTitleBarState();
+}
+
+class _NavTitleBarState extends State<NavTitleBar> with SingleTickerProviderStateMixin {
+  FocusNode _searchFocusNode;
+  TextEditingController _searchController;
+  void Function(String) _onSearchTextChanged;
+  AnimationController _searchAnimationController;
+  Animation _searchAnimation;
+  bool _searchBarVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    _onSearchTextChanged = widget.onSearchTextChanged;
+    _searchFocusNode = FocusNode();
+    _searchController = widget.searchController ?? TextEditingController();
+    _searchBarVisible = false;
+    _searchAnimationController = AnimationController(vsync: this, duration: Duration(milliseconds: 1000));
+    _searchAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _searchAnimationController,
+      curve: Curves.bounceOut,
+      //curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _searchController.dispose();
+    _searchAnimationController.dispose();
+    super.dispose();
+  }
+
+  _closeSearch() {
+    print("PANGGIL SETSTATE = _searchBarVisible");
+    setState(() { _searchBarVisible = false; });
+    _searchController.text = "";
+    _onSearchTextChanged("");
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => Navigator.of(context).pop(true),
-      child: Container(
-        padding: EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 20),
-        child: Row(children: <Widget>[
-          Icon(Icons.chevron_left, color: Colors.black87,),
-          SizedBox(width: 8,),
-          Text(judul, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
-        ],),
-      ),
+    Widget searchBar = TextField(
+      controller: _searchController,
+      decoration: InputDecoration(hintText: widget.searchHint, prefixIcon: Icon(Icons.search), border: InputBorder.none,),
+      focusNode: _searchFocusNode,
+      textInputAction: TextInputAction.search,
+      onChanged: _onSearchTextChanged,
+    );
+
+    return AnimatedBuilder(
+      animation: _searchAnimationController,
+      builder: (BuildContext context, Widget child) {
+        return Row(children: <Widget>[
+          InkWell(
+            onTap: () => Navigator.of(context).pop(true),
+            child: Container(
+              padding: EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 20),
+              child: Row(children: <Widget>[
+                Icon(Icons.chevron_left, color: Colors.black87,),
+                _searchBarVisible ? Container() : SizedBox(width: 8,),
+                _searchBarVisible ? Container() : Text(widget.judul, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+              ],),
+            ),
+          ),
+          _searchBarVisible ? SizedBox(width: (-1 * _searchAnimation.value + 1) * 150,) : SizedBox(),
+          Expanded(
+            child: _searchBarVisible ? Card(
+              clipBehavior: Clip.antiAlias,
+              elevation: 8.0,
+              margin: EdgeInsets.symmetric(horizontal: 0, vertical: 2.0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),),
+              child: Stack(children: <Widget>[
+                Opacity(opacity: _searchAnimation.value, child: searchBar,),
+                Align(alignment: Alignment.centerRight, child: Opacity(
+                  opacity: _searchAnimation.value,
+                  child: IconButton(
+                    icon: Icon(MdiIcons.closeCircle, size: 20, color: Colors.grey,),
+                    onPressed: () => _closeSearch(),
+                  ),
+                ),)
+              ],),
+            ) : Container(),
+          ),
+          _searchBarVisible || widget.onSearchTextChanged == null ? Container() : IconButton(
+            color: Colors.black87,
+            icon: Icon(Icons.search),
+            tooltip: "Cari",
+            onPressed: () {
+              //if (_isFirstLoad) return;
+              print("PANGGIL SETSTATE = _searchBarVisible");
+              setState(() => _searchBarVisible = true);
+              FocusScope.of(context).requestFocus(_searchFocusNode);
+              _searchFocusNode.requestFocus();
+              _searchAnimationController.reset();
+              _searchAnimationController.forward();
+            },
+          ),
+        ],);
+      }
     );
   }
 }
 
+/////////////////// buttons ///////////////////////////////////
 class MenuButton extends StatelessWidget {
   MenuButton({@required this.icon, @required this.teks, this.warnaIcon = Colors.red, this.ukuranIcon = 30, this.notif = 0, this.aksi});
   final IconData icon;
@@ -96,11 +191,15 @@ class MenuButton extends StatelessWidget {
 }
 
 class UiButton extends StatelessWidget {
-  UiButton({this.color, this.icon, this.teks, this.aksi, this.ukuranTeks = 0.0, this.posisiTeks = null});
+  UiButton({this.btnKey, this.color, this.icon, this.ukuranIcon, this.teks, this.aksi, this.radius = 20.0, this.elevation = 2.0, this.ukuranTeks = 0.0, this.posisiTeks = null});
   final Color color;
   final IconData icon;
   final String teks;
   final double ukuranTeks;
+  final double ukuranIcon;
+  final double radius;
+  final double elevation;
+  final Key btnKey;
   final MainAxisAlignment posisiTeks;
   final void Function() aksi;
 
@@ -109,16 +208,17 @@ class UiButton extends StatelessWidget {
     double ukuranFont = ukuranTeks == 0.0 ? Theme.of(context).textTheme.button.fontSize : ukuranTeks;
     HSLColor warnaHSL = HSLColor.fromColor(color);
     return RaisedButton(
+      key: btnKey,
       color: color,
-      elevation: 2,
-      hoverElevation: 2,
+      elevation: elevation,
+      hoverElevation: elevation,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: warnaHSL.withLightness(0.5).toColor(), width: 2),
-        borderRadius: BorderRadius.circular(20)
+        side: BorderSide(color: aksi == null ? Colors.grey : warnaHSL.withLightness(0.5).toColor(), width: 2),
+        borderRadius: BorderRadius.circular(radius)
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: posisiTeks ?? MainAxisAlignment.start, children: <Widget>[
-        icon == null ? SizedBox() : Padding(padding: EdgeInsets.only(right: 8), child: Icon(icon, color: Colors.white, size: ukuranFont,),),
-        Text(teks, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: ukuranFont),),
+        icon == null ? SizedBox() : Icon(icon, color: Colors.white, size: ukuranIcon ?? ukuranFont,),
+        teks == null ? SizedBox() : Padding(padding: EdgeInsets.only(left: 8.0), child: Text(teks, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: ukuranFont),),),
       ],),
       onPressed: aksi,
     );
@@ -147,7 +247,7 @@ class VendorCard extends StatelessWidget {
 }
 
 /////////////////// inputs ///////////////////////////////////
-class SearchBar extends StatelessWidget {
+/* class SearchBar extends StatelessWidget {
   SearchBar({this.placeholder, this.controller, this.focusNode, this.onChanged});
   final String placeholder;
   final TextEditingController controller;
@@ -164,7 +264,7 @@ class SearchBar extends StatelessWidget {
       onChanged: onChanged,
     );
   }
-}
+} */
 
 /////////////////// other ///////////////////////////////////
 class EmptyContent extends StatelessWidget {

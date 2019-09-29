@@ -14,7 +14,7 @@ class PromoApi {
   final String kodePromo;
 
   factory PromoApi.fromJson(Map<String, dynamic> res) {
-    return PromoApi(
+    return res == null ? PromoApi() : PromoApi(
       id: int.parse(res['ID']),
       judul: res['NAMA'],
       deskripsi: res['DESKRIPSI'],

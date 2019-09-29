@@ -61,12 +61,7 @@ class _PageState extends State<Page> {
           automaticallyImplyLeading: false,
           backgroundColor: HSLColor.fromColor(Colors.cyan).withLightness(0.85).toColor(),
           titleSpacing: 0.0,
-          title: Row(children: <Widget>[
-            NavBackButton(judul: _page?.judul ?? "Memuat ...",),
-            Expanded(
-              child: Container(),
-            ),
-          ],),
+          title: NavTitleBar(judul: _page?.judul ?? "Memuat ...",),
         ),
         body: SafeArea(
           child: Stack(children: <Widget>[

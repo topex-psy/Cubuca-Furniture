@@ -46,8 +46,9 @@ class MyAppHelper {
           ],
         ),
         Divider(color: Colors.black38, height: 32.0,),
-        Padding(padding: EdgeInsets.only(left: 5, right: 5, bottom: 5), child: Text("Ada pertanyaan atau permintaan khusus?", style: TextStyle(fontStyle: FontStyle.italic, fontSize: 14, height: 1.0),),),
+        Padding(padding: EdgeInsets.only(left: 5, right: 5, bottom: 5), child: Text("Ada pertanyaan atau permintaan khusus?", style: TextStyle(fontStyle: FontStyle.italic, fontSize: 14, height: 1.2),),),
         UiButton(color: Colors.greenAccent[700], icon: Icons.phone_in_talk, teks: "Kontak Kami", aksi: h.kontakKami,),
+        UiButton(color: Colors.blueAccent[700], icon: Icons.share, teks: "Bagikan", aksi: () => h.bagikan(url: item.link, judul: item.judul, body: "Menurut saya produk ini sangat menarik!"),),
       ],);
       h.showAlert("Beli ${item.judul}", isi, showButton: false, showJudul: false);
     } else {
@@ -64,6 +65,7 @@ class MyHelper {
   Size screenSize() => MediaQuery.of(context).size;
   playSound(String sound) => player.play(sound);
 
+  //fungsi untuk membuka laman url ataupun skema lainnya
   openURL(String urlString) async {
     if (urlString == null) throw 'Tidak ada tautan untuk dibuka!';
     String url = Uri.encodeFull(urlString);
@@ -74,6 +76,7 @@ class MyHelper {
     }
   }
 
+  //fungsi untuk membuka laman url share ke sosial media
   shareSosmed(int sosmed, String urlString, String pesan) {
     if (sosmed == Sosmed.custom) {
       Share.share("$pesan $urlString".trim());
@@ -88,7 +91,8 @@ class MyHelper {
     }
   }
 
-  showAlert(String judul, Widget isi, {bool showButton = true, bool showJudul = true, FlatButton customButton = null}) {
+  //fungsi untuk menampilkan popup dialog berisi pesan atau konten apapun
+  showAlert(String judul, Widget isi, {bool showButton = true, bool showJudul = true, FlatButton customButton}) {
     player.play("butt_press.wav");
     showGeneralDialog(
       barrierColor: Colors.black.withOpacity(0.5),
@@ -123,7 +127,8 @@ class MyHelper {
     );
   }
 
-  showConfirm({String judul, String pesan, void Function() aksi, void Function() doOnCancel = null}) {
+  //fungsi untuk menampilkan popup dialog konfirmasi
+  showConfirm({String judul, String pesan, void Function() aksi, void Function() doOnCancel}) {
     player.play("butt_press.wav");
     showDialog(
       context: context,
@@ -144,63 +149,65 @@ class MyHelper {
     );
   }
 
-  loadFail() {
-    showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
-      onPressed: () {
-        //Navigator.of(context).pop(true);
-        //Navigator.of(context).pop(true);
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      },
-      child: Text("Kembali"),
-    ));
-  }
+  //fungsi untuk menampilkan pesan ketika gagal memuat konten karena masalah internet
+  loadFail() => showAlert("Gagal Memuat", Text("Harap periksa koneksi internet Anda!"), customButton: FlatButton(
+    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+    child: Text("Kembali"),
+  ));
 
   //fungsi untuk menampilkan popup dialog kontak kami
-  kontakKami({String judul = "", String pesan = ""}) {
-    showAlert("Hubungi Kami",
-      ListBody(
-        children: <Widget>[
-          UiButton(color: Colors.greenAccent[700], icon: MdiIcons.whatsapp, teks: "WhatsApp", ukuranTeks: 16, aksi: () => launch("https://wa.me/${Kontak.noWA}?text=${Uri.encodeFull(pesan)}")),
-          Divider(color: Colors.black38,),
-          ListMenu(Icons.phone, "Telepon", () => launch("tel:${Kontak.noHP}")),
-          ListMenu(Icons.message, "SMS", () => launch("sms:${Kontak.noHP}")),
-          ListMenu(Icons.email, "Email", () => launch("mailto:${Kontak.email}?subject=${Uri.encodeFull(judul)}&body=${Uri.encodeFull(pesan)}")),
-        ],
-      ),
-      showButton: false,
-    );
-  }
+  kontakKami({String judul = "", String pesan = ""}) => showAlert("Hubungi Kami",
+    ListBody(
+      children: <Widget>[
+        UiButton(color: Colors.greenAccent[700], icon: MdiIcons.whatsapp, teks: "WhatsApp", ukuranTeks: 16, aksi: () => launch("https://wa.me/${Kontak.noWA}?text=${Uri.encodeFull(pesan)}")),
+        Divider(color: Colors.black38,),
+        ListMenu(Icons.phone, "Telepon", () => launch("tel:${Kontak.noHP}")),
+        ListMenu(Icons.message, "SMS", () => launch("sms:${Kontak.noHP}")),
+        ListMenu(Icons.email, "Email", () => launch("mailto:${Kontak.email}?subject=${Uri.encodeFull(judul)}&body=${Uri.encodeFull(pesan)}")),
+      ],
+    ),
+    showButton: false,
+  );
 
   //fungsi untuk menampilkan popup dialog share ke sosmed
-  bagikan(String urlString, {String pesan = ""}) {
-    showAlert("Bagikan",
-      ListBody(
-        children: <Widget>[
-          RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.whatsapp, color: Colors.white,), SizedBox(width: 8,), Text("WhatsApp", style: TextStyle(color: Colors.white),)],), color: Colors.lightGreen[700], onPressed: () => shareSosmed(Sosmed.whatsapp, urlString, pesan),),
-          RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.facebook, color: Colors.white,), SizedBox(width: 8,), Text("Facebook", style: TextStyle(color: Colors.white),)],), color: Colors.blue[900], onPressed: () => shareSosmed(Sosmed.facebook, urlString, pesan),),
-          RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.twitter, color: Colors.white,), SizedBox(width: 8,), Text("Twitter", style: TextStyle(color: Colors.white),)],), color: Colors.lightBlue[400], onPressed: () => shareSosmed(Sosmed.twitter, urlString, pesan),),
-          Divider(color: Colors.black38,),
-          RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.share, color: Colors.white,), SizedBox(width: 8,), Text("Lainnya", style: TextStyle(color: Colors.white),)],), color: Colors.purple, onPressed: () => shareSosmed(Sosmed.custom, urlString, pesan),),
-        ],
-      ),
-      showButton: false,
-    );
-  }
+  bagikan({@required String url, @required String judul, String body = ""}) => showAlert("Bagikan",
+    ListBody(
+      children: <Widget>[
+        RichText(text: TextSpan(
+            style: TextStyle(
+              fontSize: 16.0,
+              fontFamily: "Catamaran",
+              height: 1.2,
+              color: Colors.black,
+            ),
+            children: <TextSpan>[
+              TextSpan(text: 'Bagikan '),
+              TextSpan(text: judul, style: TextStyle(fontWeight: FontWeight.bold)),
+              TextSpan(text: ' ke teman atau media sosial Anda!'),
+            ],
+          ),
+        ),
+        SizedBox(height: 8,),
+        RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.whatsapp, color: Colors.white,), SizedBox(width: 8,), Text("WhatsApp", style: TextStyle(color: Colors.white),)],), color: Colors.lightGreen[700], onPressed: () => shareSosmed(Sosmed.whatsapp, url, body),),
+        RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.facebook, color: Colors.white,), SizedBox(width: 8,), Text("Facebook", style: TextStyle(color: Colors.white),)],), color: Colors.blue[900], onPressed: () => shareSosmed(Sosmed.facebook, url, body),),
+        RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.twitter, color: Colors.white,), SizedBox(width: 8,), Text("Twitter", style: TextStyle(color: Colors.white),)],), color: Colors.lightBlue[400], onPressed: () => shareSosmed(Sosmed.twitter, url, body),),
+        Divider(color: Colors.black38,),
+        RaisedButton(child: Row(children: <Widget>[Icon(MdiIcons.share, color: Colors.white,), SizedBox(width: 8,), Text("Lainnya", style: TextStyle(color: Colors.white),)],), color: Colors.purple, onPressed: () => shareSosmed(Sosmed.custom, url, body),),
+      ],
+    ),
+    showButton: false,
+  );
 
   //fungsi truncate teks ke panjang maksimum dengan penambahan ellipsis
-  String maxlength(String teks, int maxlength) {
-    return teks.length > maxlength ? teks.substring(0, maxlength) + "..." : teks;
-  }
+  String maxlength(String teks, int maxlength) => teks.length > maxlength ? teks.substring(0, maxlength) + "..." : teks;
 
   //fungsi yang mengembalikan teks versi html
-  Html html(String htmlString) {
-    return Html(
-      data: htmlString,
-      onLinkTap: (url) {
-        print("OPENING URL $url...");
-      },
-    );
-  }
+  Html html(String htmlString) => Html(
+    data: htmlString,
+    onLinkTap: (url) {
+      print("OPENING URL $url...");
+    },
+  );
 
   //fungsi untuk menentukan apakah data batch mengandung keyword tertentu
   bool searchDo(List<String> data, String keyword) {
@@ -212,11 +219,11 @@ class MyHelper {
   }
 
   //fungsi untuk menyalin teks
-  salin(String teks) {
+  salin(String teks, String what, GlobalKey<ScaffoldState> scaffoldKey) {
     Clipboard.setData(ClipboardData(text: teks));
-    Scaffold.of(context).showSnackBar(
-      SnackBar(content: Text("Kode telah disalin!"),)
-    );
+    final scaffold = scaffoldKey?.currentState ?? Scaffold.of(context);
+    scaffold.hideCurrentSnackBar();
+    scaffold.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text("$what telah disalin!"),),);
   }
 }
 

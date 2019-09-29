@@ -21,6 +21,10 @@ class _FAQState extends State<FAQ> {
     super.dispose();
   }
 
+  Future<void> _onSearchTextChanged(String keyword) async {
+    //TODO implementasi fungsi pencarian
+  }
+
   Future<bool> _onWillPop() async {
     return true;
   }
@@ -38,12 +42,7 @@ class _FAQState extends State<FAQ> {
           automaticallyImplyLeading: false,
           backgroundColor: HSLColor.fromColor(Colors.cyan).withLightness(0.85).toColor(),
           titleSpacing: 0.0,
-          title: Row(children: <Widget>[
-            NavBackButton(judul: "FAQ",),
-            Expanded(
-              child: Container(),
-            ),
-          ],),
+          title: NavTitleBar(judul: "FAQ", searchHint: "Cari pertanyaan", onSearchTextChanged: _onSearchTextChanged,),
         ),
         body: SafeArea(
           child: Stack(children: <Widget>[

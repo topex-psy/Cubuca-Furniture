@@ -21,6 +21,10 @@ class _BantuanState extends State<Bantuan> {
     super.dispose();
   }
 
+  Future<void> _onSearchTextChanged(String keyword) async {
+    //TODO implementasi fungsi pencarian
+  }
+
   Future<bool> _onWillPop() async {
     return true;
   }
@@ -38,12 +42,7 @@ class _BantuanState extends State<Bantuan> {
           automaticallyImplyLeading: false,
           backgroundColor: HSLColor.fromColor(Colors.cyan).withLightness(0.85).toColor(),
           titleSpacing: 0.0,
-          title: Row(children: <Widget>[
-            NavBackButton(judul: "Pusat Bantuan",),
-            Expanded(
-              child: Container(),
-            ),
-          ],),
+          title: NavTitleBar(judul: "Pusat Bantuan", searchHint: "Cari bantuan", onSearchTextChanged: _onSearchTextChanged,),
         ),
         body: SafeArea(
           child: Stack(children: <Widget>[
